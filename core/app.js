@@ -90,25 +90,42 @@
     renderHome(root);
   }
 
+  function greeting() {
+    const h = new Date().getHours();
+    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  }
+
+  // Home is a glanceable "Today" feed — each module reports one actionable line.
+  // Tap a row to open the module. This is the daily-driver screen, not a CRUD grid.
   function renderHome(root) {
-    const grid = App.el('div', { class: 'grid' });
     if (modules.length === 0) {
       root.append(App.el('p', { class: 'empty' }, 'No modules yet. Drop one into /modules.'));
       return;
     }
+
+    root.append(App.el('div', { class: 'hero' },
+      App.el('div', { class: 'hero-greet' }, greeting()),
+      App.el('div', { class: 'hero-date' }, new Date().toLocaleDateString(undefined,
+        { weekday: 'long', month: 'long', day: 'numeric' }))));
+
+    const feed = App.el('div', { class: 'section' });
+    feed.append(App.el('h2', null, 'Today'));
     modules.forEach((mod) => {
-      const card = App.el('button', {
-        class: 'card', style: mod.accent ? `--accent:${mod.accent}` : '',
+      let s = null;
+      try { s = mod.summary && mod.summary(); } catch (e) { s = null; }
+      if (!s) s = { title: mod.title, detail: '', tone: 'none' };
+      const tone = s.tone || 'none';
+      feed.append(App.el('button', {
+        class: 'feed-row', style: mod.accent ? `--accent:${mod.accent}` : '',
         onclick: () => App.go('/m/' + mod.id),
-      });
-      card.append(App.el('div', { class: 'card-icon' }, mod.icon || '•'));
-      card.append(App.el('div', { class: 'card-title' }, mod.title));
-      const summary = App.el('div', { class: 'card-summary' });
-      try { mod.tile && mod.tile(summary); } catch (e) { summary.textContent = ''; }
-      card.append(summary);
-      grid.append(card);
+      },
+        App.el('div', { class: 'feed-icon' }, mod.icon || '•'),
+        App.el('div', { class: 'feed-body' },
+          App.el('div', { class: 'feed-title' }, s.title || mod.title),
+          s.detail ? App.el('div', { class: 'feed-detail' }, s.detail) : ''),
+        App.el('span', { class: 'feed-status ' + tone }, tone === 'good' ? '✓' : '›')));
     });
-    root.append(grid);
+    root.append(feed);
   }
 
   window.App = App;

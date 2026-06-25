@@ -128,5 +128,14 @@
 
   function clear(root) { root.innerHTML = ''; return root; }
 
-  App.register({ id: 'body', title: 'Body', icon: '📊', accent: '#60a5fa', tile, view });
+  function summary() {
+    const w = weights(), lb = latestLb();
+    const loggedToday = w.length && w[w.length - 1].date === Store.today();
+    const toGo = Math.max(0, +(lb - GOAL).toFixed(1));
+    return { title: `📊 ${lb} lb`,
+      detail: loggedToday ? (toGo ? `${toGo} lb to goal` : 'At goal 🎯') : 'Weigh in today',
+      tone: loggedToday ? 'good' : 'todo' };
+  }
+
+  App.register({ id: 'body', title: 'Body', icon: '📊', accent: '#60a5fa', tile, view, summary });
 })();

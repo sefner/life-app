@@ -198,8 +198,16 @@
     return `${h}:${String(m).padStart(2, '0')}${ap}`;
   }
 
+  function summary() {
+    const slots = todaySlots();
+    if (!slots.length) return { title: '💊 Supplements', detail: 'Add your stack', tone: 'todo' };
+    const done = slots.filter(taken).length;
+    return { title: '💊 Supplements', detail: `${done} of ${slots.length} taken`,
+      tone: done === slots.length ? 'good' : 'todo' };
+  }
+
   App.register({
     id: 'supplements', title: 'Supplements', icon: '💊', accent: '#fbbf24',
-    tile, view, onDeepLink,
+    tile, view, summary, onDeepLink,
   });
 })();

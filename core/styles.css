@@ -44,23 +44,30 @@ body {
 
 #root { padding: var(--pad); max-width: 720px; margin: 0 auto; }
 
-/* Home grid of module cards */
-.grid {
-  display: grid; gap: 12px;
-  grid-template-columns: repeat(2, 1fr);
-}
-.card {
-  text-align: left; cursor: pointer;
+/* Home "Today" feed */
+.hero { padding: 8px 2px 18px; }
+.hero-greet { font-size: 24px; font-weight: 680; }
+.hero-date { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+.feed-row {
+  width: 100%; text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 14px;
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius); padding: 16px;
-  color: var(--text); min-height: 116px;
-  display: flex; flex-direction: column; gap: 6px;
+  border-left: 3px solid var(--accent, var(--line));
+  border-radius: 14px; padding: 14px 15px; margin-bottom: 10px;
+  color: var(--text);
   transition: transform .08s ease, border-color .15s ease;
 }
-.card:active { transform: scale(.98); }
-.card-icon { font-size: 26px; }
-.card-title { font-weight: 600; }
-.card-summary { color: var(--muted); font-size: 13px; margin-top: auto; }
+.feed-row:active { transform: scale(.99); }
+.feed-icon { font-size: 24px; flex: none; }
+.feed-body { flex: 1; min-width: 0; }
+.feed-title { font-weight: 600; }
+.feed-detail { color: var(--muted); font-size: 13px; margin-top: 1px; }
+.feed-status { flex: none; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+.feed-status.good { background: var(--accent); color: #08130c; }
+.feed-status.todo { background: var(--surface-2); color: var(--accent); }
+.feed-status.none { background: transparent; color: var(--muted); }
 
 /* Generic building blocks modules reuse */
 .section { margin-bottom: 22px; }

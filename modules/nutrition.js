@@ -50,31 +50,45 @@
     long: 'Fuel it: carb-rich breakfast, 30–60 g carb/hr if over 90 min, then protein + carbs within 60 min after. Highest-carb day.',
   };
 
-  // Quick-prep meal plan. Protein + fat are fixed per meal; the carb side scales
-  // with today's training tier (rest/train/long) — that's the whole integration.
-  // Per-tier carbs sum to 165 / 200 / 265 g; protein 180 g, fat 73 g every day.
-  const MEALS = [
-    { slot: 'Breakfast', p: 40, f: 18,
-      core: '3 whole eggs + 6 egg whites scrambled (1 tsp oil)',
-      carb: { rest: '⅓ cup oats + ½ banana', train: '⅔ cup oats + small banana', long: '1 cup oats + banana + honey' },
-      c: { rest: 35, train: 50, long: 75 },
-      swaps: 'oats → 2 slices toast · eggs → ¾ cup cottage cheese + 2 eggs' },
-    { slot: 'Lunch', p: 50, f: 22,
-      core: '6 oz grilled chicken + ½ avocado, olive-oil drizzle, greens',
-      carb: { rest: '¾ cup rice', train: '1 cup rice', long: '1¼ cup rice + fruit' },
-      c: { rest: 45, train: 55, long: 70 },
-      swaps: 'chicken → tuna, turkey, shrimp · rice → potatoes or tortillas' },
-    { slot: 'Dinner', p: 55, f: 25,
-      core: '7 oz lean ground beef (93/7), taco-bowl style with salsa',
-      carb: { rest: '1 cup rice or 1 large potato', train: '1¼ cup rice + beans', long: '1½ cup rice + corn' },
-      c: { rest: 55, train: 60, long: 65 },
-      swaps: 'beef → salmon, sirloin, chicken thighs · rice → sweet potato' },
-    { slot: 'Snack / shake', p: 35, f: 8,
-      core: '1 cup nonfat Greek yogurt + ½ scoop whey + 10 almonds',
-      carb: { rest: '½ banana', train: '1 banana', long: 'banana + 1 tbsp honey + granola' },
-      c: { rest: 30, train: 35, long: 55 },
-      swaps: 'yogurt → cottage cheese · add berries' },
-  ];
+  // A menu to PICK from — not a plan to obey. Each option is pre-macro'd and
+  // quick-prep; you tap what you'll actually eat and watch the totals fill.
+  const MENU = {
+    Breakfast: [
+      { id: 'b1', name: 'Eggs scramble (3 whole + 6 whites)', p: 40, c: 3, f: 18 },
+      { id: 'b2', name: 'Greek yogurt + granola + berries', p: 38, c: 45, f: 8 },
+      { id: 'b3', name: 'Oatmeal + scoop whey + banana', p: 32, c: 70, f: 8 },
+      { id: 'b4', name: '2 eggs + 2 toast + avocado', p: 18, c: 30, f: 22 },
+      { id: 'b5', name: 'Protein smoothie (whey, banana, PB, milk)', p: 40, c: 45, f: 12 },
+      { id: 'b6', name: 'Cottage cheese + pineapple + walnuts', p: 28, c: 25, f: 12 },
+    ],
+    Lunch: [
+      { id: 'l1', name: 'Chicken & rice bowl + veg', p: 52, c: 50, f: 8 },
+      { id: 'l2', name: 'Tuna + avocado on 2 toast', p: 40, c: 32, f: 18 },
+      { id: 'l3', name: 'Turkey & cheese wrap + fruit', p: 38, c: 45, f: 15 },
+      { id: 'l4', name: 'Chicken burrito bowl (beans, rice, salsa)', p: 45, c: 60, f: 12 },
+      { id: 'l5', name: 'Salmon + potatoes + greens', p: 38, c: 40, f: 20 },
+      { id: 'l6', name: 'Grilled chicken Caesar + roll', p: 48, c: 30, f: 18 },
+    ],
+    Dinner: [
+      { id: 'd1', name: 'Lean beef taco bowl (rice, beans, salsa)', p: 55, c: 55, f: 22 },
+      { id: 'd2', name: 'Salmon + sweet potato + asparagus', p: 42, c: 45, f: 24 },
+      { id: 'd3', name: 'Sirloin + potato + veg', p: 50, c: 45, f: 18 },
+      { id: 'd4', name: 'Chicken thighs + rice + broccoli', p: 45, c: 55, f: 20 },
+      { id: 'd5', name: 'Shrimp stir-fry + rice', p: 40, c: 65, f: 12 },
+      { id: 'd6', name: 'Turkey burgers + bun + salad', p: 48, c: 35, f: 22 },
+    ],
+    'Snacks / extras': [
+      { id: 's1', name: 'Greek yogurt + honey', p: 23, c: 25, f: 0 },
+      { id: 's2', name: 'Whey shake + banana', p: 28, c: 30, f: 2 },
+      { id: 's3', name: 'Protein bar', p: 20, c: 25, f: 8 },
+      { id: 's4', name: 'Cottage cheese + berries', p: 25, c: 12, f: 5 },
+      { id: 's5', name: 'Apple + 2 tbsp peanut butter', p: 8, c: 30, f: 16 },
+      { id: 's6', name: 'Beef jerky + fruit', p: 25, c: 25, f: 4 },
+      { id: 's7', name: 'Rice cakes + tuna', p: 30, c: 25, f: 2 },
+    ],
+  };
+  const MENU_ALL = Object.values(MENU).flat();
+  const picksKey = () => 'meal-picks:' + Store.today();
 
   // ---- Home tile -----------------------------------------------------------
   function tile(el) {
@@ -86,7 +100,7 @@
   // ---- Detail view ---------------------------------------------------------
   function view(root, params) {
     if (params[0] === 'adjust') return adjustView(root);
-    if (params[0] === 'meals') return mealsView(root);
+    if (params[0] === 'meals') return foodView(root);
     const t = targets();
     const tierLabel = t.tier === 'rest' ? 'Rest day' : t.tier === 'long' ? 'Long-run day' : 'Training day';
 
@@ -108,7 +122,7 @@
     root.append(sec);
 
     root.append(E('div', { class: 'section' },
-      E('button', { class: 'btn', onclick: () => App.go('/m/nutrition/meals') }, "🍽️ See today's meals")));
+      E('button', { class: 'btn', onclick: () => App.go('/m/nutrition/meals') }, "🍽️ Pick today's food")));
 
     const timeKey = t.tier === 'rest' ? 'rest' : t.tier === 'long' ? 'long' : (t.type === 'run' ? 'run' : 'strength');
     const tip = E('div', { class: 'section' });
@@ -134,40 +148,77 @@
       E('div', { class: 'sub' }, `${kcal} kcal · ${pct}%`), bar));
   }
 
-  function mealsView(root) {
+  function eaten() {
+    const picks = Store.get(picksKey(), []);
+    let P = 0, C = 0, F = 0;
+    picks.forEach((id) => { const m = MENU_ALL.find((x) => x.id === id); if (m) { P += m.p; C += m.c; F += m.f; } });
+    return { picks, P, C, F, K: P * 4 + C * 4 + F * 9 };
+  }
+
+  function prog(label, val, target, color) {
+    const pct = target ? Math.min(100, Math.round((val / target) * 100)) : 0;
+    const over = val > target;
+    const bar = E('div', { class: 'progress' });
+    bar.append(E('span', { style: `width:${pct}%;background:${color}` }));
+    return E('div', null,
+      E('div', { style: 'display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px' },
+        E('span', null, label), E('span', { class: over ? '' : 'sub' }, `${val} / ${target} g`)),
+      bar);
+  }
+
+  // Pick-from-a-list food picker with live totals. Choose freely; deviation is the point.
+  function foodView(root) {
     document.getElementById('backBtn').onclick = () => App.go('/m/nutrition');
     const t = targets();
-    const tier = t.tier;
-    const tierLabel = tier === 'rest' ? 'Rest day' : tier === 'long' ? 'Long-run day' : 'Training day';
+    const tierNote = t.tier === 'rest' ? 'Rest day — go lighter on carbs'
+      : t.tier === 'long' ? 'Long-run day — load up carbs' : 'Training day';
 
-    root.append(E('div', { class: 'section' }, E('div', { class: 'row' },
-      E('div', { class: 'grow' },
-        E('div', null, tierLabel + ' meals'),
-        E('div', { class: 'sub' }, "Quick-prep · carb portions scale with today's training")))));
+    const render = () => {
+      root.innerHTML = '';
+      const e = eaten();
 
-    let P = 0, C = 0, F = 0, K = 0;
-    const sec = E('div', { class: 'section' });
-    MEALS.forEach((m) => {
-      const c = m.c[tier], k = m.p * 4 + c * 4 + m.f * 9;
-      P += m.p; C += c; F += m.f; K += k;
-      sec.append(E('div', { class: 'row', style: 'flex-direction:column;align-items:stretch;gap:5px' },
+      const hero = E('div', { class: 'section' });
+      hero.append(E('div', { class: 'row', style: 'flex-direction:column;align-items:stretch;gap:9px' },
         E('div', { style: 'display:flex;justify-content:space-between;align-items:center' },
-          E('strong', null, m.slot), E('span', { class: 'pill' }, k + ' kcal')),
-        E('div', null, m.core),
-        E('div', null, '＋ ' + m.carb[tier]),
-        E('div', { class: 'sub', style: 'color:var(--accent)' }, `P${m.p} · C${c} · F${m.f} g`),
-        E('div', { class: 'sub' }, 'swap — ' + m.swaps)));
-    });
-    root.append(sec);
+          E('strong', null, `${e.K} / ${t.cal} kcal`), E('span', { class: 'pill' }, tierNote)),
+        prog('Protein', e.P, t.protein, '#fbbf24'),
+        prog('Carbs', e.C, t.carbs, '#4ade80'),
+        prog('Fat', e.F, t.fat, '#60a5fa')));
+      root.append(hero);
 
-    root.append(E('div', { class: 'section' }, E('div', { class: 'row', style: 'border-color:var(--accent)' },
-      E('div', { class: 'grow' },
-        E('div', null, `Day total — ${K} kcal`),
-        E('div', { class: 'sub' }, `P${P} · C${C} · F${F} g  ·  target ~${t.cal}`)))));
+      if (e.picks.length) root.append(E('div', { class: 'section' },
+        E('button', { class: 'btn ghost small', onclick: () => { Store.set(picksKey(), []); render(); } },
+          'Clear today')));
 
-    root.append(E('div', { class: 'section' }, E('div', { class: 'sub' },
-      'Portions are starting points — nudge ±10–15% to hunger and the scale trend. Hit protein first; ' +
-      'let carbs flex with how hard you trained.')));
+      Object.entries(MENU).forEach(([slot, opts]) => {
+        const sec = E('div', { class: 'section' });
+        sec.append(E('h2', null, slot));
+        opts.forEach((m) => {
+          const on = e.picks.includes(m.id);
+          const row = E('div', { class: 'row', style: 'cursor:pointer' + (on ? ';border-color:var(--accent)' : ''),
+            onclick: () => {
+              Store.update(picksKey(), (a) => {
+                a = (a || []).slice();
+                const i = a.indexOf(m.id);
+                if (i >= 0) a.splice(i, 1); else a.push(m.id);
+                return a;
+              }, []);
+              render();
+            } },
+            E('div', { class: 'check' + (on ? ' done' : '') }, '✓'),
+            E('div', { class: 'grow' },
+              E('div', null, m.name),
+              E('div', { class: 'sub' }, `P${m.p} · C${m.c} · F${m.f} · ${m.p * 4 + m.c * 4 + m.f * 9} kcal`)));
+          sec.append(row);
+        });
+        root.append(sec);
+      });
+
+      root.append(E('div', { class: 'section' }, E('div', { class: 'sub' },
+        "Pick whatever you'll actually eat — fill protein first, let carbs flex with the day. " +
+        'Over 100% just means you went past target. Tap again to remove.')));
+    };
+    render();
   }
 
   function adjustView(root) {
@@ -197,5 +248,13 @@
       input: E('input', { class: 'field', type: 'number', step, inputmode: 'decimal', value }) };
   }
 
-  App.register({ id: 'nutrition', title: 'Nutrition', icon: '🍽️', accent: '#f97316', tile, view });
+  function summary() {
+    const t = targets(), e = eaten();
+    if (!e.picks.length) return { title: `🍽️ ${t.cal} kcal target`,
+      detail: `Pick today's food · ${t.protein}g protein`, tone: 'todo' };
+    return { title: `🍽️ ${e.K} / ${t.cal} kcal`,
+      detail: `${e.P}/${t.protein}g protein picked`, tone: e.P >= t.protein * 0.9 ? 'good' : 'todo' };
+  }
+
+  App.register({ id: 'nutrition', title: 'Nutrition', icon: '🍽️', accent: '#f97316', tile, view, summary });
 })();

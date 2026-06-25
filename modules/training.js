@@ -183,5 +183,14 @@
 
   function clear(root) { root.innerHTML = ''; return root; }
 
-  App.register({ id: 'training', title: 'Training', icon: '🏋️', accent: '#4ade80', tile, view });
+  function summary() {
+    const d = plan()[dayKey()], log = dayLog();
+    return {
+      title: `${TYPE[d.type].icon} ${d.title}`,
+      detail: d.type === 'rest' ? 'Recovery day' : log.done ? 'Completed' : 'Not done yet',
+      tone: log.done ? 'good' : d.type === 'rest' ? 'none' : 'todo',
+    };
+  }
+
+  App.register({ id: 'training', title: 'Training', icon: '🏋️', accent: '#4ade80', tile, view, summary });
 })();
