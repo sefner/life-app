@@ -50,6 +50,32 @@
     long: 'Fuel it: carb-rich breakfast, 30–60 g carb/hr if over 90 min, then protein + carbs within 60 min after. Highest-carb day.',
   };
 
+  // Quick-prep meal plan. Protein + fat are fixed per meal; the carb side scales
+  // with today's training tier (rest/train/long) — that's the whole integration.
+  // Per-tier carbs sum to 165 / 200 / 265 g; protein 180 g, fat 73 g every day.
+  const MEALS = [
+    { slot: 'Breakfast', p: 40, f: 18,
+      core: '3 whole eggs + 6 egg whites scrambled (1 tsp oil)',
+      carb: { rest: '⅓ cup oats + ½ banana', train: '⅔ cup oats + small banana', long: '1 cup oats + banana + honey' },
+      c: { rest: 35, train: 50, long: 75 },
+      swaps: 'oats → 2 slices toast · eggs → ¾ cup cottage cheese + 2 eggs' },
+    { slot: 'Lunch', p: 50, f: 22,
+      core: '6 oz grilled chicken + ½ avocado, olive-oil drizzle, greens',
+      carb: { rest: '¾ cup rice', train: '1 cup rice', long: '1¼ cup rice + fruit' },
+      c: { rest: 45, train: 55, long: 70 },
+      swaps: 'chicken → tuna, turkey, shrimp · rice → potatoes or tortillas' },
+    { slot: 'Dinner', p: 55, f: 25,
+      core: '7 oz lean ground beef (93/7), taco-bowl style with salsa',
+      carb: { rest: '1 cup rice or 1 large potato', train: '1¼ cup rice + beans', long: '1½ cup rice + corn' },
+      c: { rest: 55, train: 60, long: 65 },
+      swaps: 'beef → salmon, sirloin, chicken thighs · rice → sweet potato' },
+    { slot: 'Snack / shake', p: 35, f: 8,
+      core: '1 cup nonfat Greek yogurt + ½ scoop whey + 10 almonds',
+      carb: { rest: '½ banana', train: '1 banana', long: 'banana + 1 tbsp honey + granola' },
+      c: { rest: 30, train: 35, long: 55 },
+      swaps: 'yogurt → cottage cheese · add berries' },
+  ];
+
   // ---- Home tile -----------------------------------------------------------
   function tile(el) {
     const t = targets();
@@ -60,6 +86,7 @@
   // ---- Detail view ---------------------------------------------------------
   function view(root, params) {
     if (params[0] === 'adjust') return adjustView(root);
+    if (params[0] === 'meals') return mealsView(root);
     const t = targets();
     const tierLabel = t.tier === 'rest' ? 'Rest day' : t.tier === 'long' ? 'Long-run day' : 'Training day';
 
@@ -79,6 +106,9 @@
     sec.append(macroRow('Carbs', t.carbs, t.carbs * 4, t.cal, '#4ade80'));
     sec.append(macroRow('Fat', t.fat, t.fat * 9, t.cal, '#60a5fa'));
     root.append(sec);
+
+    root.append(E('div', { class: 'section' },
+      E('button', { class: 'btn', onclick: () => App.go('/m/nutrition/meals') }, "🍽️ See today's meals")));
 
     const timeKey = t.tier === 'rest' ? 'rest' : t.tier === 'long' ? 'long' : (t.type === 'run' ? 'run' : 'strength');
     const tip = E('div', { class: 'section' });
@@ -102,6 +132,42 @@
     return E('div', { class: 'row' }, E('div', { class: 'grow' },
       E('div', null, `${name} — ${grams} g`),
       E('div', { class: 'sub' }, `${kcal} kcal · ${pct}%`), bar));
+  }
+
+  function mealsView(root) {
+    document.getElementById('backBtn').onclick = () => App.go('/m/nutrition');
+    const t = targets();
+    const tier = t.tier;
+    const tierLabel = tier === 'rest' ? 'Rest day' : tier === 'long' ? 'Long-run day' : 'Training day';
+
+    root.append(E('div', { class: 'section' }, E('div', { class: 'row' },
+      E('div', { class: 'grow' },
+        E('div', null, tierLabel + ' meals'),
+        E('div', { class: 'sub' }, "Quick-prep · carb portions scale with today's training")))));
+
+    let P = 0, C = 0, F = 0, K = 0;
+    const sec = E('div', { class: 'section' });
+    MEALS.forEach((m) => {
+      const c = m.c[tier], k = m.p * 4 + c * 4 + m.f * 9;
+      P += m.p; C += c; F += m.f; K += k;
+      sec.append(E('div', { class: 'row', style: 'flex-direction:column;align-items:stretch;gap:5px' },
+        E('div', { style: 'display:flex;justify-content:space-between;align-items:center' },
+          E('strong', null, m.slot), E('span', { class: 'pill' }, k + ' kcal')),
+        E('div', null, m.core),
+        E('div', null, '＋ ' + m.carb[tier]),
+        E('div', { class: 'sub', style: 'color:var(--accent)' }, `P${m.p} · C${c} · F${m.f} g`),
+        E('div', { class: 'sub' }, 'swap — ' + m.swaps)));
+    });
+    root.append(sec);
+
+    root.append(E('div', { class: 'section' }, E('div', { class: 'row', style: 'border-color:var(--accent)' },
+      E('div', { class: 'grow' },
+        E('div', null, `Day total — ${K} kcal`),
+        E('div', { class: 'sub' }, `P${P} · C${C} · F${F} g  ·  target ~${t.cal}`)))));
+
+    root.append(E('div', { class: 'section' }, E('div', { class: 'sub' },
+      'Portions are starting points — nudge ±10–15% to hunger and the scale trend. Hit protein first; ' +
+      'let carbs flex with how hard you trained.')));
   }
 
   function adjustView(root) {
