@@ -14,6 +14,26 @@
 
   const seed = []; // user adds their own; nothing hardcoded
 
+  // One-tap evidence-based starter set for a 47yo doing strength + endurance.
+  // Iron is deliberately excluded — test ferritin first (see scout Mar-26 labs).
+  const STARTER = [
+    { name: 'Creatine monohydrate', dose: '5 g', times: ['08:00'] },
+    { name: 'Vitamin D3 + K2', dose: '2,000 IU D3 / 100 mcg K2', times: ['08:00'] },
+    { name: 'Omega-3 (EPA+DHA)', dose: '~1–2 g EPA+DHA', times: ['08:00'] },
+    { name: 'Magnesium glycinate', dose: '300 mg', times: ['21:00'] },
+    { name: 'Thorne FloraSport', dose: '1 serving', times: ['21:00'] },
+  ];
+
+  function loadStarter() {
+    const have = new Set(items().map((s) => s.name.toLowerCase()));
+    const toAdd = STARTER.filter((s) => !have.has(s.name.toLowerCase()))
+      .map((s) => ({ ...s, id: Store.uid(), active: true }));
+    if (!toAdd.length) return App.toast('Starter stack already loaded');
+    Store.update(KEY, (arr) => [...(arr || []), ...toAdd], []);
+    App.go('/m/supplements/manage');
+    App.toast(`Added ${toAdd.length}`);
+  }
+
   function items() { return Store.get(KEY, seed); }
   function todayLog() { return Store.get(logKey(), {}); }
   function slotId(s, time) { return s.id + '@' + time; }
@@ -101,6 +121,10 @@
 
     const add = E('div', { class: 'section' });
     add.append(E('button', { class: 'btn', onclick: () => editForm(add, null) }, '+ Add supplement'));
+    if (!items().length) {
+      add.append(E('button', { class: 'btn ghost', style: 'margin-top:8px', onclick: loadStarter },
+        '✨ Load starter stack (5)'));
+    }
     root.append(add);
 
     shortcutsHelp(root);
