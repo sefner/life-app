@@ -2,7 +2,7 @@
  * Cache-first for app files so the PWA opens instantly and works with no signal.
  * Bump CACHE when you ship changes so clients pick them up.
  */
-const CACHE = 'life-v5';
+const CACHE = 'life-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './modules/nutrition.js',
   './modules/body.js',
   './modules/supplements.js',
+  './modules/reminders.js',
   './icons/icon.svg',
 ];
 
